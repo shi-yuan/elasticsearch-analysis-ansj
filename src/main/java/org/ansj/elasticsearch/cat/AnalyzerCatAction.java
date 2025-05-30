@@ -5,9 +5,13 @@ import org.ansj.library.CrfLibrary;
 import org.ansj.library.DicLibrary;
 import org.ansj.library.StopLibrary;
 import org.ansj.library.SynonymsLibrary;
-import org.elasticsearch.action.admin.indices.analyze.AnalyzeAction;
-import org.elasticsearch.client.internal.node.NodeClient;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
+import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Table;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.action.RestResponseListener;
@@ -17,11 +21,7 @@ import org.nlpcn.commons.lang.util.StringUtil;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * 分词的cat
@@ -29,23 +29,18 @@ import static java.util.Collections.unmodifiableList;
  */
 public class AnalyzerCatAction extends AbstractCatAction {
 
-    @Override
-    public String getName() {
-        return "ansj_cat_analyzer_action";
-    }
-
-    @Override
-    public List<Route> routes() {
-        return unmodifiableList(asList(
-                new Route(RestRequest.Method.GET, "/_cat/analyze"),
-                new Route(RestRequest.Method.GET, "/_cat/{index}/analyze")));
+    @Inject
+    public AnalyzerCatAction(Settings settings, RestController controller) {
+        super(settings);
+        controller.registerHandler(RestRequest.Method.GET, "/_cat/analyze", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_cat/{index}/analyze", this);
     }
 
     @Override
     protected RestChannelConsumer doCatRequest(RestRequest request, NodeClient client) {
         String[] texts = request.paramAsStringArrayOrEmptyIfAll("text");
 
-        AnalyzeAction.Request analyzeRequest = new AnalyzeAction.Request(request.param("index"));
+        AnalyzeRequest analyzeRequest = new AnalyzeRequest(request.param("index"));
         analyzeRequest.field(request.param("field"));
 
         String tokenizer = request.param("tokenizer");
@@ -56,9 +51,9 @@ public class AnalyzerCatAction extends AbstractCatAction {
         if (texts == null || texts.length == 0) {
             analyzeRequest.text("null");
             analyzeRequest.analyzer("index_ansj");
-            return channel -> client.admin().indices().analyze(analyzeRequest, new RestResponseListener<AnalyzeAction.Response>(channel) {
+            return channel -> client.admin().indices().analyze(analyzeRequest, new RestResponseListener<AnalyzeResponse>(channel) {
                 @Override
-                public RestResponse buildResponse(final AnalyzeAction.Response analyzeResponse) throws Exception {
+                public RestResponse buildResponse(final AnalyzeResponse analyzeResponse) throws Exception {
                     return ChineseRestTable.response(channel,
                             "err args example : /_cat/analyze?text=中国&analyzer=index_ansj, other params: [field,tokenizer,token_filters,char_filters]");
                 }
@@ -77,9 +72,9 @@ public class AnalyzerCatAction extends AbstractCatAction {
                 analyzeRequest.addCharFilter(filter);
             }
 
-            return channel -> client.admin().indices().analyze(analyzeRequest, new RestResponseListener<AnalyzeAction.Response>(channel) {
+            return channel -> client.admin().indices().analyze(analyzeRequest, new RestResponseListener<AnalyzeResponse>(channel) {
                 @Override
-                public RestResponse buildResponse(final AnalyzeAction.Response analyzeResponse) throws Exception {
+                public RestResponse buildResponse(final AnalyzeResponse analyzeResponse) throws Exception {
                     return ChineseRestTable.buildResponse(buildTable(analyzeResponse, request), channel);
                 }
             });
@@ -113,9 +108,9 @@ public class AnalyzerCatAction extends AbstractCatAction {
         return Collections.unmodifiableSet(responseParams);
     }
 
-    private Table buildTable(final AnalyzeAction.Response analyzeResponse, final RestRequest request) {
+    private Table buildTable(final AnalyzeResponse analyzeResponse, final RestRequest request) {
         Table t = getTableWithHeader(request);
-        for (AnalyzeAction.AnalyzeToken token : analyzeResponse.getTokens()) {
+        for (AnalyzeResponse.AnalyzeToken token : analyzeResponse.getTokens()) {
             t.startRow();
             t.addCell(token.getTerm());
             t.addCell(token.getStartOffset());

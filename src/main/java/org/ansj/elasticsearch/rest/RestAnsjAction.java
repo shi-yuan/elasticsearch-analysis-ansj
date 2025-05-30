@@ -7,35 +7,32 @@ import org.ansj.library.CrfLibrary;
 import org.ansj.library.DicLibrary;
 import org.ansj.library.StopLibrary;
 import org.ansj.library.SynonymsLibrary;
-import org.elasticsearch.client.internal.node.NodeClient;
+import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
+import static org.elasticsearch.rest.RestRequest.Method.GET;
+import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 /**
  * Created by zhangqinghua on 16/2/2.
  */
 public class RestAnsjAction extends BaseRestHandler {
 
-    @Override
-    public String getName() {
-        return "ansj_action";
-    }
-
-    @Override
-    public List<Route> routes() {
-        return unmodifiableList(asList(
-                new Route(RestRequest.Method.GET, "/_ansj"),
-                new Route(RestRequest.Method.POST, "/_ansj")));
+    @Inject
+    public RestAnsjAction(Settings settings, RestController controller) {
+        super(settings);
+        controller.registerHandler(GET, "/_ansj", this);
+        controller.registerHandler(POST, "/_ansj", this);
     }
 
     @Override

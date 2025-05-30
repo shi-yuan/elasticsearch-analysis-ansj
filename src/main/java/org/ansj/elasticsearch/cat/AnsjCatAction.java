@@ -8,8 +8,11 @@ import org.ansj.library.CrfLibrary;
 import org.ansj.library.DicLibrary;
 import org.ansj.library.StopLibrary;
 import org.ansj.library.SynonymsLibrary;
-import org.elasticsearch.client.internal.node.NodeClient;
+import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Table;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.action.RestResponseListener;
@@ -18,31 +21,22 @@ import org.elasticsearch.rest.action.cat.AbstractCatAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * Created by zhangqinghua on 16/2/2.
  */
 public class AnsjCatAction extends AbstractCatAction {
 
-    @Override
-    public String getName() {
-        return "ansj_cat_action";
-    }
-
-    @Override
-    public List<Route> routes() {
-        return unmodifiableList(asList(
-                new Route(RestRequest.Method.GET, "/_cat/ansj"),
-                new Route(RestRequest.Method.GET, "/_cat/ansj/config"),
-                new Route(RestRequest.Method.GET, "/_ansj/flush/config"),
-                new Route(RestRequest.Method.GET, "/_ansj/flush/config/single"),
-                new Route(RestRequest.Method.GET, "/_ansj/flush/dic"),
-                new Route(RestRequest.Method.GET, "/_ansj/flush/dic/single")));
+    @Inject
+    public AnsjCatAction(Settings settings, RestController controller) {
+        super(settings);
+        controller.registerHandler(RestRequest.Method.GET, "/_cat/ansj", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_cat/ansj/config", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_ansj/flush/config", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_ansj/flush/config/single", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_ansj/flush/dic", this);
+        controller.registerHandler(RestRequest.Method.GET, "/_ansj/flush/dic/single", this);
     }
 
     @Override

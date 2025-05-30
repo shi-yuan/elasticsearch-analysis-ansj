@@ -30,10 +30,9 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.ShardsIterator;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.injection.guice.Inject;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportResponseHandler;
@@ -42,14 +41,12 @@ import org.nlpcn.commons.lang.tire.domain.Forest;
 import org.nlpcn.commons.lang.tire.domain.SmartForest;
 import org.nlpcn.commons.lang.util.StringUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -64,11 +61,12 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
     private final AnsjElasticConfigurator cfg;
 
     @Inject
-    public TransportAnsjAction(ThreadPool threadPool, ClusterService clusterService,
+    public TransportAnsjAction(Settings settings,
+                               ThreadPool threadPool, ClusterService clusterService,
                                TransportService transportService, ActionFilters actionFilters,
                                IndexNameExpressionResolver indexNameExpressionResolver,
                                AnsjElasticConfigurator cfg) {
-        super(AnsjAction.NAME, threadPool, clusterService, transportService, actionFilters, indexNameExpressionResolver, AnsjRequest::new, threadPool.executor(ThreadPool.Names.GENERIC));
+        super(settings, AnsjAction.NAME, threadPool, clusterService, transportService, actionFilters, indexNameExpressionResolver, AnsjRequest::new, ThreadPool.Names.GENERIC);
 
         this.cfg = cfg;
     }
@@ -245,7 +243,6 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         final CountDownLatch countDownLatch = new CountDownLatch(nodes.getSize());
 
         final Map<String, String> result = new HashMap<>(16);
-        final Writeable.Reader<AnsjResponse> reader = getResponseReader();
 
         for (final DiscoveryNode node : nodes) {
 
@@ -253,8 +250,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
 
             TransportResponseHandler<AnsjResponse> rep = new TransportResponseHandler<AnsjResponse>() {
                 @Override
-                public AnsjResponse read(StreamInput in) throws IOException {
-                    return reader.read(in);
+                public AnsjResponse newInstance() {
+                    return newResponse();
                 }
 
                 @Override
@@ -272,8 +269,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 }
 
                 @Override
-                public Executor executor() {
-                    return TransportResponseHandler.TRANSPORT_WORKER;
+                public String executor() {
+                    return ThreadPool.Names.SAME;
                 }
             };
 
@@ -314,7 +311,6 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         final CountDownLatch countDownLatch = new CountDownLatch(nodes.getSize());
 
         final Map<String, String> result = new HashMap<>(16);
-        final Writeable.Reader<AnsjResponse> reader = getResponseReader();
 
         for (final DiscoveryNode node : nodes) {
 
@@ -322,8 +318,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
 
             transportService.sendRequest(node, AnsjAction.NAME, req, new TransportResponseHandler<AnsjResponse>() {
                 @Override
-                public AnsjResponse read(StreamInput in) throws IOException {
-                    return reader.read(in);
+                public AnsjResponse newInstance() {
+                    return newResponse();
                 }
 
                 @Override
@@ -341,8 +337,8 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 }
 
                 @Override
-                public Executor executor() {
-                    return TransportResponseHandler.TRANSPORT_WORKER;
+                public String executor() {
+                    return ThreadPool.Names.SAME;
                 }
             });
         }
@@ -383,15 +379,14 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
             LOG.info("flush {} ok", key);
             return new AnsjResponse().put("status", MESSAGE);
         } catch (Exception e) {
-            e.printStackTrace();
             LOG.error("flush {} err: {}", key, e);
             return new AnsjResponse().put("status", e.getMessage());
         }
     }
 
     @Override
-    protected Writeable.Reader<AnsjResponse> getResponseReader() {
-        return AnsjResponse::new;
+    protected AnsjResponse newResponse() {
+        return new AnsjResponse();
     }
 
     @Override

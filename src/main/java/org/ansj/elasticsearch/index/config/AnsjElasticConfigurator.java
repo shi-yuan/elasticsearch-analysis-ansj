@@ -12,7 +12,7 @@ import org.ansj.util.MyStaticValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.SpecialPermission;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.nlpcn.commons.lang.tire.domain.SmartForest;
@@ -29,7 +29,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class AnsjElasticConfigurator {
 
@@ -58,7 +57,7 @@ public class AnsjElasticConfigurator {
     }
 
     private void init() {
-        Path configFilePath = env.configDir().resolve("elasticsearch-analysis-ansj").resolve(CONFIG_FILE_NAME);
+        Path configFilePath = env.configFile().resolve("elasticsearch-analysis-ansj").resolve(CONFIG_FILE_NAME);
         LOG.info("try to load ansj config file: {}", configFilePath);
         if (!Files.exists(configFilePath)) {
             configFilePath = Paths.get(new File(AnsjElasticConfigurator.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent(), "config").resolve(CONFIG_FILE_NAME);
@@ -79,7 +78,7 @@ public class AnsjElasticConfigurator {
         Settings settings = builder.build();
         path = settings.get("ansj_config");
         ansjSettings = settings.getAsSettings("ansj");
-        configDir = env.configDir().toFile();
+        configDir = env.configFile().toFile();
 
         flushConfig();
     }
@@ -89,7 +88,7 @@ public class AnsjElasticConfigurator {
 
         // ansj.cfg.yml文件，插入到变量中
         if (ansjSettings != null && !ansjSettings.isEmpty()) {
-            MyStaticValue.ENV.putAll(ansjSettings.keySet().stream().collect(Collectors.toMap(k -> k, ansjSettings::get)));
+            MyStaticValue.ENV.putAll(ansjSettings.getAsMap());
         }
 
         // ansj.cfg.yml文件中ansj_config指定的文件或者配置文件目录下的ansj_library.properties
@@ -115,7 +114,10 @@ public class AnsjElasticConfigurator {
      * @param printErr
      */
     private void initConfig(String path, boolean printErr) {
-        SpecialPermission.check();
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             try (BufferedReader br = IOUtil.getReader(PathToStream.stream(path), "utf-8")) {
                 String temp;
@@ -226,7 +228,10 @@ public class AnsjElasticConfigurator {
      * @param key
      */
     public void reloadLibrary(String key) {
-        SpecialPermission.check();
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             if (key.startsWith(DicLibrary.DEFAULT)) {
                 if (MyStaticValue.ENV.containsKey(key)) {
@@ -280,22 +285,22 @@ public class AnsjElasticConfigurator {
      * 默认配置
      */
     public static Map<String, String> getDefaults() {
-        return ImmutableOpenMap.<String, String>builder(10)
+        return MapBuilder.<String, String>newMapBuilder()
                 // 是否开启人名识别
-                .fPut("isNameRecognition", MyStaticValue.isNameRecognition.toString())
+                .put("isNameRecognition", MyStaticValue.isNameRecognition.toString())
                 // 是否开启数字识别
-                .fPut("isNumRecognition", MyStaticValue.isNumRecognition.toString())
+                .put("isNumRecognition", MyStaticValue.isNumRecognition.toString())
                 // 是否数字和量词合并
-                .fPut("isQuantifierRecognition", MyStaticValue.isQuantifierRecognition.toString())
+                .put("isQuantifierRecognition", MyStaticValue.isQuantifierRecognition.toString())
                 // 是否显示真实词语
-                .fPut("isRealName", MyStaticValue.isRealName.toString())
+                .put("isRealName", MyStaticValue.isRealName.toString())
                 // 是否用户词典不加载相同的词
-                .fPut("isSkipUserDefine", String.valueOf(MyStaticValue.isSkipUserDefine))
-                .fPut(CrfLibrary.DEFAULT, CrfLibrary.DEFAULT)
-                .fPut(DicLibrary.DEFAULT, DicLibrary.DEFAULT)
-                .fPut(StopLibrary.DEFAULT, StopLibrary.DEFAULT)
-                .fPut(SynonymsLibrary.DEFAULT, SynonymsLibrary.DEFAULT)
-                .fPut(AmbiguityLibrary.DEFAULT, AmbiguityLibrary.DEFAULT)
-                .build();
+                .put("isSkipUserDefine", String.valueOf(MyStaticValue.isSkipUserDefine))
+                .put(CrfLibrary.DEFAULT, CrfLibrary.DEFAULT)
+                .put(DicLibrary.DEFAULT, DicLibrary.DEFAULT)
+                .put(StopLibrary.DEFAULT, StopLibrary.DEFAULT)
+                .put(SynonymsLibrary.DEFAULT, SynonymsLibrary.DEFAULT)
+                .put(AmbiguityLibrary.DEFAULT, AmbiguityLibrary.DEFAULT)
+                .immutableMap();
     }
 }
