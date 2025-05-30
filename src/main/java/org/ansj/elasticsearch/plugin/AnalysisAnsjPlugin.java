@@ -5,6 +5,7 @@ import org.ansj.elasticsearch.action.TransportAnsjAction;
 import org.ansj.elasticsearch.cat.AnalyzerCatAction;
 import org.ansj.elasticsearch.cat.AnsjCatAction;
 import org.ansj.elasticsearch.index.analysis.AnsjAnalyzerProvider;
+import org.ansj.elasticsearch.index.analysis.AnsjCompoundWordTokenFilterFactory;
 import org.ansj.elasticsearch.index.analysis.AnsjTokenizerTokenizerFactory;
 import org.ansj.elasticsearch.index.config.AnsjElasticConfigurator;
 import org.ansj.elasticsearch.rest.RestAnsjAction;
@@ -16,7 +17,11 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.env.Environment;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerProvider;
+import org.elasticsearch.index.analysis.TokenFilterFactory;
 import org.elasticsearch.index.analysis.TokenizerFactory;
 import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.plugins.ActionPlugin;
@@ -24,6 +29,7 @@ import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestHandler;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +49,25 @@ public class AnalysisAnsjPlugin extends Plugin implements AnalysisPlugin, Action
                 bind(AnsjElasticConfigurator.class).asEagerSingleton();
             }
         });
+    }
+
+    @Override
+    public Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
+        Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> extra = Collections.singletonMap("ansj_decompounder", new AnalysisModule.AnalysisProvider<TokenFilterFactory>() {
+            @Override
+            public TokenFilterFactory get(IndexSettings indexSettings, Environment environment, String name, Settings settings) throws IOException {
+                return new AnsjCompoundWordTokenFilterFactory(indexSettings, environment, name, settings);
+            }
+
+            @Override
+            public boolean requiresAnalysisSettings() {
+                return true;
+            }
+        });
+
+        LOG.info("regedit token filter named : ansj_decompounder");
+
+        return extra;
     }
 
     @Override

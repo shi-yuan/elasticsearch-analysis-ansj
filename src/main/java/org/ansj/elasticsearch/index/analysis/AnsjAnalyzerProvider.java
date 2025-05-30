@@ -4,11 +4,11 @@ import org.ansj.elasticsearch.index.config.AnsjElasticConfigurator;
 import org.ansj.lucene9.AnsjAnalyzer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class AnsjAnalyzerProvider extends AbstractIndexAnalyzerProvider<AnsjAnalyzer> {
@@ -17,13 +17,12 @@ public class AnsjAnalyzerProvider extends AbstractIndexAnalyzerProvider<AnsjAnal
 
     private final AnsjAnalyzer analyzer;
 
-    @Inject
     public AnsjAnalyzerProvider(IndexSettings indexSettings, String name, Settings settings) {
         super(indexSettings, name, settings);
 
         Settings settings2 = indexSettings.getSettings().getAsSettings("index.analysis.tokenizer." + name());
 
-        Map<String, String> args = settings2.getAsMap();
+        Map<String, String> args = new HashMap<>(settings2.getAsMap());
         if (args.isEmpty()) {
             args.putAll(AnsjElasticConfigurator.getDefaults());
             args.put("type", name());

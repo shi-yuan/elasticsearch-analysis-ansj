@@ -257,7 +257,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 @Override
                 public void handleResponse(AnsjResponse response) {
                     LOG.info("[{}] response: {}", node, response.asMap());
-                    result.put(node.getAddress().toString(), "success");
+                    result.put(node.getAddress().toString(), String.valueOf(response.asMap()));
                     countDownLatch.countDown();
                 }
 
@@ -280,7 +280,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         try {
             countDownLatch.await(20, TimeUnit.SECONDS);
         } catch (Exception e) {
-            LOG.error("failed to send request[path:{},args:{}] nodes [{}]: {}", req.getPath(), req.asMap(), nodes, e);
+            LOG.error("failed to send request[path:{},args:{}] nodes [{}]", req.getPath(), req.asMap(), nodes, e);
         }
 
         return new AnsjResponse(result);
@@ -325,7 +325,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
                 @Override
                 public void handleResponse(AnsjResponse response) {
                     LOG.info("[{}] response: {}", node, response.asMap());
-                    result.put(node.getAddress().toString(), "success");
+                    result.put(node.getAddress().toString(), String.valueOf(response.asMap()));
                     countDownLatch.countDown();
                 }
 
@@ -346,7 +346,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         try {
             countDownLatch.await(20, TimeUnit.SECONDS);
         } catch (Exception e) {
-            LOG.error("failed to send request[path:{},args:{}] nodes [{}]: {}", req.getPath(), req.asMap(), nodes, e);
+            LOG.error("failed to send request[path:{},args:{}] nodes [{}]", req.getPath(), req.asMap(), nodes, e);
         }
 
         return new AnsjResponse(result);
@@ -379,7 +379,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
             LOG.info("flush {} ok", key);
             return new AnsjResponse().put("status", MESSAGE);
         } catch (Exception e) {
-            LOG.error("flush {} err: {}", key, e);
+            LOG.error("flush {} err", key, e);
             return new AnsjResponse().put("status", e.getMessage());
         }
     }
