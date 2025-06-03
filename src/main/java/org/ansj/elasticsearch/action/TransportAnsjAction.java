@@ -263,7 +263,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
 
                 @Override
                 public void handleException(TransportException exp) {
-                    LOG.warn("failed to send request[path:{},args:{}] to [{}]: {}", req.getPath(), req.asMap(), node, exp);
+                    LOG.warn("failed to send request[path:{},args:{}] to [{}]", req.getPath(), req.asMap(), node, exp);
                     result.put(node.getAddress().toString(), "err :" + exp.getMessage());
                     countDownLatch.countDown();
                 }
@@ -278,7 +278,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         }
 
         try {
-            countDownLatch.await(20, TimeUnit.SECONDS);
+            countDownLatch.await(30, TimeUnit.SECONDS);
         } catch (Exception e) {
             LOG.error("failed to send request[path:{},args:{}] nodes [{}]", req.getPath(), req.asMap(), nodes, e);
         }
@@ -331,7 +331,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
 
                 @Override
                 public void handleException(TransportException exp) {
-                    LOG.warn("failed to send request[path:{},args:{}] to [{}]: {}", req.getPath(), req.asMap(), node, exp);
+                    LOG.warn("failed to send request[path:{},args:{}] to [{}]", req.getPath(), req.asMap(), node, exp);
                     result.put(node.getAddress().toString(), "err :" + exp.getMessage());
                     countDownLatch.countDown();
                 }
@@ -344,7 +344,7 @@ public class TransportAnsjAction extends TransportSingleShardAction<AnsjRequest,
         }
 
         try {
-            countDownLatch.await(20, TimeUnit.SECONDS);
+            countDownLatch.await(30, TimeUnit.SECONDS);
         } catch (Exception e) {
             LOG.error("failed to send request[path:{},args:{}] nodes [{}]", req.getPath(), req.asMap(), nodes, e);
         }
